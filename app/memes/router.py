@@ -1,4 +1,4 @@
-from fastapi import APIRouter, UploadFile, Depends
+from fastapi import APIRouter, UploadFile, Depends, Query
 
 from app.exceptions import EmpyMemesStorageException, ErrorLoadingImageToS3Exception
 from app.memes.dao import MemesDAO
@@ -13,12 +13,17 @@ router = APIRouter(
 
 
 @router.get('')
-async def get_memes():
+async def get_memes(page: int = Query(1, ge=1), limit: int = Query(10, ge=1, le=100)):
     all_memes = await MemesDAO.find_all()
-    if not all_memes:
+
+    start = (page - 1) * limit
+    end = start + limit
+    memes_slice = all_memes[start:end]
+
+    if not memes_slice:
         raise EmpyMemesStorageException
 
-    return all_memes
+    return memes_slice
 
 
 @router.get('/{meme_id}')
